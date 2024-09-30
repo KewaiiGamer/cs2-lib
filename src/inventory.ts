@@ -653,7 +653,9 @@ export class CS2InventoryItem
                     ? Object.fromEntries(Array.from(this.storage).map(([key, value]) => [key, value.asBase()]))
                     : undefined,
             updatedAt: this.updatedAt,
-            wear: this.wear
+            wear: this.wear,
+            price: this.price,
+            userId: this.userId
         } satisfies Interface<CS2BaseInventoryItem>;
     }
 }
