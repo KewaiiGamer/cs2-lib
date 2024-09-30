@@ -41,6 +41,8 @@ export interface CS2BaseInventoryItem {
     storage?: Record<number, CS2BaseInventoryItem>;
     updatedAt?: number;
     wear?: number;
+    price?: number; 
+    userId?: string;
 }
 
 export interface CS2InventoryData {
@@ -533,7 +535,8 @@ export class CS2InventoryItem
     storage: Map<number, CS2InventoryItem> | undefined;
     updatedAt: number | undefined;
     wear: number | undefined;
-
+    price: number | undefined; 
+    userId: string | undefined;
     private assign({ patches, stickers, storage }: Partial<CS2BaseInventoryItem>): void {
         if (patches !== undefined) {
             this.patches = new Map(
@@ -621,6 +624,12 @@ export class CS2InventoryItem
 
     getWear(): number {
         return this.wear ?? this.wearMin ?? CS2_MIN_WEAR;
+    }
+    getPrice(): number {
+        return this.price ?? 0;
+    }
+    getUserId(): number {
+        return this.userId ?? 1;
     }
 
     getStickerWear(slot: number): number {
