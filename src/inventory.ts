@@ -628,8 +628,8 @@ export class CS2InventoryItem
     getPrice(): number {
         return this.price ?? 0;
     }
-    getUserId(): number {
-        return this.userId ?? 1;
+    getUserId(): string {
+        return this.userId ?? "1";
     }
 
     getStickerWear(slot: number): number {
