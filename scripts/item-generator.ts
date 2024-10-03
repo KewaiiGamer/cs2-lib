@@ -1054,6 +1054,10 @@ export class ItemGenerator {
             categoryToken = "#CSGO_crate_sticker_pack_stkr_craft_01_capsule";
             category = this.findTranslation(categoryToken);
         }
+        if (subfolder == "sticker_craft") {
+            categoryToken = "#CSGO_crate_sticker_pack_stkr_craft_02_capsule";
+            category = this.findTranslation(categoryToken);
+        }
         if (UNCATEGORIZED_STICKERS.includes(folder)) {
             categoryToken = undefined;
             category = "Valve";
