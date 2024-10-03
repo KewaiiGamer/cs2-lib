@@ -1059,10 +1059,10 @@ export class ItemGenerator {
             category = this.findTranslation(categoryToken);
         }
         if (category === undefined) {
-            categoryToken = `#CSGO_crate_sticker_pack_${folder}_capsule`;
+            categoryToken = `#CSGO_crate_sticker_pack_${folder.replace('_capsule', '')}_capsule`;
             category = this.findTranslation(categoryToken);
         }
-        if (tournament_event_id !== undefined) {
+        if (tournament_event_id !== undefined && category === undefined) {
             categoryToken = `#CSGO_Tournament_Event_NameShort_${tournament_event_id}`;
             category = this.findTranslation(categoryToken);
             assert(category, `unable to find the short name for tournament '${tournament_event_id}'.`);
@@ -1074,6 +1074,20 @@ export class ItemGenerator {
         if (category === undefined) {
             categoryToken = `#CSGO_sticker_crate_key_${folder}`;
             category = this.findTranslation(categoryToken);
+        }
+        if (category === undefined) {
+            categoryToken = `#CSGO_sticker_crate_key_${folder}`;
+            category = this.findTranslation(categoryToken);
+        }
+
+        
+        if (sticker_material.startsWith('community/sticker_craft')) {
+            categoryToken = `#CSGO_crate_sticker_pack_stkr_craft_02_capsule`
+            category = this.findTranslation(categoryToken)
+        }        
+        if (sticker_material.startsWith('community/elemental_craft')) {
+            categoryToken = `#CSGO_crate_sticker_pack_stkr_craft_01_capsule`
+            category = this.findTranslation(categoryToken)
         }
         return [ensure(category), categoryToken] as const;
     }
