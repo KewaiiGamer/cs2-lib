@@ -26,11 +26,11 @@ export interface CS2BaseInventoryItem {
     equippedT?: boolean;
     id: number;
     nameTag?: string;
-    patches?: Record<string, number>;
+    patches?: Record<number, number>;
     seed?: number;
     statTrak?: number;
     stickers?: Record<
-        string,
+        number,
         {
             id: number;
             wear?: number;
@@ -41,6 +41,8 @@ export interface CS2BaseInventoryItem {
     storage?: Record<number, CS2BaseInventoryItem>;
     updatedAt?: number;
     wear?: number;
+    price?: number; 
+    userId?: string;
 }
 
 export interface CS2InventoryData {
@@ -132,23 +134,6 @@ export class CS2Inventory {
         }
     }
 
-    public removeInvalidItemReferences(item: CS2BaseInventoryItem): void {
-        if (item.patches !== undefined) {
-            for (const [slot, patchId] of Object.entries(item.patches)) {
-                if (!this.economy.items.has(patchId)) {
-                    delete item.patches[slot];
-                }
-            }
-        }
-        if (item.stickers !== undefined) {
-            for (const [slot, sticker] of Object.entries(item.stickers)) {
-                if (!this.economy.items.has(sticker.id)) {
-                    delete item.stickers[slot];
-                }
-            }
-        }
-    }
-
     public validateBaseInventoryItem({
         id,
         nameTag,
@@ -173,7 +158,6 @@ export class CS2Inventory {
             Object.entries(items)
                 .filter(([, { id }]) => this.economy.items.has(id))
                 .map(([key, value]) => {
-                    this.removeInvalidItemReferences(value);
                     const uid = parseInt(key, 10);
                     return [uid, new CS2InventoryItem(this, uid, value, this.economy.getById(value.id))] as const;
                 })
@@ -551,7 +535,8 @@ export class CS2InventoryItem
     storage: Map<number, CS2InventoryItem> | undefined;
     updatedAt: number | undefined;
     wear: number | undefined;
-
+    price: number | undefined; 
+    userId: string | undefined;
     private assign({ patches, stickers, storage }: Partial<CS2BaseInventoryItem>): void {
         if (patches !== undefined) {
             this.patches = new Map(
@@ -573,7 +558,6 @@ export class CS2InventoryItem
                 Object.entries(storage)
                     .filter(([, { id }]) => this.economy.items.has(id))
                     .map(([key, value]) => {
-                        this.inventory.removeInvalidItemReferences(value);
                         const economyItem = this.economy.getById(value.id);
                         assert(value.storage === undefined);
                         const uid = parseInt(key, 10);
@@ -641,6 +625,12 @@ export class CS2InventoryItem
     getWear(): number {
         return this.wear ?? this.wearMin ?? CS2_MIN_WEAR;
     }
+    getPrice(): number {
+        return this.price ?? 0;
+    }
+    getUserId(): string {
+        return this.userId ?? "1";
+    }
 
     getStickerWear(slot: number): number {
         return this.stickers?.get(slot)?.wear ?? CS2_MIN_STICKER_WEAR;
@@ -663,7 +653,9 @@ export class CS2InventoryItem
                     ? Object.fromEntries(Array.from(this.storage).map(([key, value]) => [key, value.asBase()]))
                     : undefined,
             updatedAt: this.updatedAt,
-            wear: this.wear
+            wear: this.wear,
+            price: this.price,
+            userId: this.userId
         } satisfies Interface<CS2BaseInventoryItem>;
     }
 }
