@@ -285,11 +285,11 @@ export class CS2Inventory {
         return this;
     }
 
-    unlockContainer(unlockedItem: CS2UnlockedItem, containerUid: number, keyUid?: number): this {
+    unlockContainer(unlockedItem: CS2UnlockedItem, containerUid: number, keyUid?: number, validateUnlocked?: boolean = true, validateKey?: boolean = true): this {
         const containerItem = this.get(containerUid);
-        this.economy.validateUnlockedItem(containerItem, unlockedItem);
+        if (validateUnlocked) this.economy.validateUnlockedItem(containerItem, unlockedItem);
         const keyItem = keyUid !== undefined ? this.get(keyUid) : undefined;
-        this.economy.validateContainerAndKey(containerItem, keyItem);
+	if (validateKey) this.economy.validateContainerAndKey(containerItem, keyItem);
         this.items.delete(containerUid);
         if (keyUid !== undefined) {
             this.items.delete(keyUid);
