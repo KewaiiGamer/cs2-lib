@@ -285,7 +285,7 @@ export class CS2Inventory {
         return this;
     }
 
-    unlockContainer(unlockedItem: CS2UnlockedItem, containerUid: number, keyUid?: number, validateUnlocked?: boolean = true, validateKey?: boolean = true): this {
+    unlockContainer(unlockedItem: CS2UnlockedItem, containerUid: number, keyUid?: number, validateUnlocked: boolean = true, validateKey: boolean = true): this {
         const containerItem = this.get(containerUid);
         if (validateUnlocked) this.economy.validateUnlockedItem(containerItem, unlockedItem);
         const keyItem = keyUid !== undefined ? this.get(keyUid) : undefined;
