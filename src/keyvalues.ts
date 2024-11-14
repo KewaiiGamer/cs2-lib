@@ -64,12 +64,6 @@ export class CS2KeyValues {
             if (data[index] === "}") {
                 return "";
             }
-            console.log(
-                data.substring(Math.max(0, index - 64), index) +
-                    data[index] +
-                    data.substring(index + 1, Math.min(data.length, index + 63))
-            );
-            console.log("".padStart(64, " ") + "^");
             fail(`Unexpected character at index ${index}.`);
         }
 
