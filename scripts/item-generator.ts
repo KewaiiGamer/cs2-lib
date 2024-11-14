@@ -30,10 +30,12 @@ import { prependHash, readJson, shouldRun, warning, write, writeJson } from "./u
 const AGENTS_SOUNDEVENTS_PATH = resolve(CS2_CSGO_PATH, "soundevents/vo/agents");
 const IMAGES_PATH = resolve(CS2_CSGO_PATH, "panorama/images");
 const ITEMS_GAME_PATH = resolve(CS2_CSGO_PATH, "scripts/items/items_game.txt");
+const ITEMS_GAME_CUSTOM_PATH = resolve(CS2_CSGO_PATH, "scripts/items/items_game_custom.txt");
 const RESOURCE_PATH = resolve(CS2_CSGO_PATH, "resource");
 
 const ITEM_IDS_JSON_PATH = "assets/data/items-ids.json";
 const ITEMS_GAME_JSON_PATH = "assets/data/items-game.json";
+const ITEMS_GAME_CUSTOM_JSON_PATH = "assets/data/items-game-custom.json";
 const ITEMS_JSON_PATH = "assets/data/items.json";
 const ITEMS_TS_PATH = "src/items.ts";
 const LOCALIZATIONS_JSON_PATH = "assets/localizations/items-%s.json";
@@ -91,6 +93,7 @@ export class DefaultGraffitiManager {
 
 export class ItemGenerator {
     gameItems: CS2GameItems["items_game"] = null!;
+    gameItemsCustom: CS2GameItems["items_game"] = null!;
 
     private csgoLocalizationByLanguage: Record<string, CS2Language["lang"]["Tokens"]> = null!;
     private itemLocalizationByLanguage: CS2ItemLocalizationByLanguage = null!;
@@ -128,6 +131,7 @@ export class ItemGenerator {
     async run() {
         await this.readCsgoLanguageFiles();
         await this.readItemsGameFile();
+        await this.readItemsGameCustomFile();
         this.parseBaseWeapons();
         this.parseBaseMelees();
         this.parseBaseGloves();
@@ -140,6 +144,7 @@ export class ItemGenerator {
         this.parseCollectibles();
         this.parseTools();
         this.parseContainers();
+	this.parseCustomSkins();
         this.persist();
     }
 
@@ -175,6 +180,28 @@ export class ItemGenerator {
         assert(length > 0);
         assert(this.csgoLocalizationByLanguage.english !== undefined);
         warning(`Loaded ${length} languages.`);
+    }
+
+
+    async readItemsGameCustomFile() {
+        this.gameItemsCustom = CS2KeyValues.parse<CS2GameItems>(await readFile(ITEMS_GAME_CUSTOM_PATH, "utf-8")).items_game;
+        this.paintKitsCustom = Object.entries(this.gameItemsCustom.paint_kits)
+            .map(([paintKitIndex, { description_tag, description_string, name, wear_remap_max, wear_remap_min }]) => {
+                assert(name);
+                if (name === "default" || description_tag === undefined) {
+                    return undefined;
+                }
+                return {
+                    className: name,
+                    descToken: prependHash(description_string),
+                    index: Number(paintKitIndex),
+                    nameToken: prependHash(description_tag),
+                    rarityColorHex: this.getRarityColorHex([name]),
+                    wearMax: wear_remap_max !== undefined ? Number(wear_remap_max) : CS2_DEFAULT_MAX_WEAR,
+                    wearMin: wear_remap_min !== undefined ? Number(wear_remap_min) : CS2_DEFAULT_MIN_WEAR
+                };
+            })
+            .filter(isNotUndefined);
     }
 
     async readItemsGameFile() {
@@ -231,6 +258,8 @@ export class ItemGenerator {
                 };
             })
             .filter(isNotUndefined);
+
+
         this.graffitiTints = Object.values(this.gameItems.graffiti_tints).map(({ id }) => ({
             id: Number(id),
             name: this.requireTranslation(`#Attrib_SprayTintValue_${id}`),
@@ -353,6 +382,49 @@ export class ItemGenerator {
         }
     }
 
+    private parseCustomSkins() {
+        warning("Parsing custom skins...");
+        for (const { icon_path } of Object.values(this.gameItemsCustom.alternate_icons2.weapon_icons)) {
+            if (!LIGHT_ICON_RE.test(icon_path)) {
+                continue;
+            }
+            const paintKit = this.paintKitsCustom.find(({ className }) => icon_path.includes(`_${className}_light`));
+            if (paintKit === undefined) {
+                continue;
+            }
+            const baseItem = this.baseItems.find(({ className }) =>
+                icon_path.includes(`/${className}_${paintKit.className}`)
+            );
+            if (baseItem === undefined) {
+                continue;
+            }
+            const itemKey = `[${paintKit.className}]${baseItem.className}`;
+            const id = this.itemIdentifierManager.get(`paint_${baseItem.def}_${paintKit.index}`);
+            const legacy = this.itemManager.get(id)?.legacy;
+            this.addContainerItem(itemKey, id);
+            this.addTranslation(id, "name", baseItem.nameToken, " | ", paintKit.nameToken);
+            this.addTranslation(id, "desc", paintKit.descToken);
+            this.addItem({
+                ...baseItem,
+                ...this.getSkinCollection(id, itemKey),
+                altName: this.getSkinAltName(paintKit.className),
+                base: undefined,
+                baseId: baseItem.id,
+                free: undefined,
+                id,
+                image: this.getSkinImage(id, baseItem.className, paintKit.className),
+                index: Number(paintKit.index),
+                legacy,
+                rarity: this.getRarityColorHex(
+                    MELEE_OR_GLOVES_TYPES.includes(baseItem.type)
+                        ? [baseItem.rarity, paintKit.rarityColorHex]
+                        : [itemKey, paintKit.rarityColorHex]
+                ),
+                wearMax: paintKit.wearMax,
+                wearMin: paintKit.wearMin
+            });
+        }
+    }
     private parseSkins() {
         warning("Parsing skins...");
         for (const { icon_path } of Object.values(this.gameItems.alternate_icons2.weapon_icons)) {
@@ -838,6 +910,9 @@ export class ItemGenerator {
 
         writeJson(ITEMS_GAME_JSON_PATH, this.gameItems);
         warning(`Generated '${ITEMS_GAME_JSON_PATH}'.`);
+
+        writeJson(ITEMS_GAME_CUSTOM_JSON_PATH, this.gameItemsCustom);
+        warning(`Generated '${ITEMS_GAME_CUSTOM_JSON_PATH}'.`);
 
         write(ITEMS_TS_PATH, useItemsTemplate(items));
         warning(`Generated '${ITEMS_TS_PATH}'.`);
