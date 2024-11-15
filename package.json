@@ -1,9 +1,9 @@
 {
-    "name": "@kewaiigamer/cs2-lib",
+    "name": "@driscode/cs2-lib",
     "description": "A TypeScript library for manipulating Counter-Strike 2 data",
     "license": "MIT",
-    "author": "Kewaii",
-    "repository": "kewaiigamer/cs2-lib",
+    "author": "driscode",
+    "repository": "driscode/cs2-lib",
     "type": "module",
     "main": "dist/index.js",
     "scripts": {
